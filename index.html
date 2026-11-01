@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>하루 한 칸</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#f4f4fa;--card:#fff;--sub:#f6f6fb;--line:#e8e8f2;--tx:#25243a;--mu:#8a89a3;--ac:#5b5bd6;--bar:#e6e6f0}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#14141c;--card:#1d1d28;--sub:#252533;--line:#32324a;--tx:#ecebf7;--mu:#9a99b5;--ac:#8c8cf2;--bar:#32324a}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#14141c;--card:#1d1d28;--sub:#252533;--line:#32324a;--tx:#ecebf7;--mu:#9a99b5;--ac:#8c8cf2;--bar:#32324a}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--tx);font-family:"Pretendard","Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",system-ui,sans-serif;padding:16px}
+.card{max-width:480px;margin:0 auto;background:var(--card);border-radius:28px;padding:22px 20px 24px;box-shadow:0 8px 30px rgba(60,60,120,.08)}
+h1{margin:0;font-size:26px;font-weight:800;letter-spacing:-.02em}
+h1 span{color:var(--ac);font-size:14px;margin-right:6px;vertical-align:top}
+.tag{margin:6px 0 18px;color:var(--mu);font-size:14px}
+.box{border:1px solid var(--line);border-radius:20px;padding:16px 14px}
+.hd{display:flex;justify-content:space-between;align-items:flex-start;padding:0 4px}
+.hd b{font-size:17px}.hd small{display:block;color:var(--mu);font-size:13px;margin-top:3px}
+.ic{background:none;border:0;color:var(--mu);cursor:pointer;padding:4px;border-radius:8px}
+.ic.on{color:var(--ac)}
+.sec{display:flex;align-items:center;gap:7px;font-weight:700;font-size:15px;margin:14px 4px 8px;color:var(--tx)}
+.sec svg{color:var(--mu)}
+.sec+.row,.row+.row{margin-top:8px}
+.row{display:flex;align-items:center;gap:12px;background:var(--sub);border:1px solid var(--line);border-radius:14px;padding:12px 14px;font-size:16px;cursor:pointer}
+.row.done .t{color:var(--mu);text-decoration:line-through}
+.cb{flex:none;width:24px;height:24px;border:1.6px solid #c4c3d8;border-radius:8px;background:var(--card);display:grid;place-items:center;padding:0;cursor:pointer}
+.row.done .cb,.cb.on{background:var(--ac);border-color:var(--ac)}
+.row.done .cb::after,.cb.on::after{content:"";width:6px;height:11px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg) translate(-1px,-1px)}
+.t{flex:1;min-width:0}
+input[type=text]{width:100%;font:inherit;color:var(--tx);background:transparent;border:0;outline:0;padding:0}
+input::placeholder{color:var(--mu);opacity:.7}
+.row input{font-size:16px}
+.del{background:none;border:0;color:var(--mu);font-size:20px;cursor:pointer;line-height:1}
+.add{margin:8px 0 0;background:none;border:1px dashed var(--line);color:var(--mu);border-radius:14px;padding:9px;width:100%;font:inherit;font-size:14px;cursor:pointer}
+.sep{border:0;border-top:1px solid var(--line);margin:14px 4px 0}
+h2{font-size:16px;margin:22px 4px 10px;display:flex;align-items:center;gap:7px}
+.goal{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:16px;padding:13px 14px}
+.goal.done input{color:var(--mu);text-decoration:line-through}
+.flow{display:flex;justify-content:space-between;align-items:baseline;margin:24px 4px 10px;font-weight:700;font-size:16px}
+.flow span{color:var(--mu);font-weight:700}
+.bar{height:10px;border-radius:99px;background:var(--bar);overflow:hidden;margin:0 4px}
+.bar i{display:block;height:100%;width:0;background:var(--ac);border-radius:99px;transition:width .35s ease}
+.msg{color:var(--mu);font-size:13px;margin:8px 4px 0}
+.mood{margin-top:18px}
+.faces{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:12px 0 14px}
+.face{height:46px;border-radius:14px;background:var(--sub);border:1px solid var(--line);color:var(--mu);display:grid;place-items:center;cursor:pointer;padding:0}
+.face.on{background:var(--ac);border-color:var(--ac);color:#fff}
+.mood h3{margin:0 4px 8px;font-size:15px}
+.note{background:var(--sub);border:1px solid var(--line);border-radius:14px;padding:13px 14px}
+button:focus-visible,input:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="card" id="app"></div>
+<script>
+(function(){
+var KEY='haru-hankan-v1', mem=null;
+var SEC=[['am','오전'],['pm','오후'],['night','밤']];
+var ICON={
+am:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 18h18M6 18a6 6 0 0112 0M12 6V4M5 10l-1.2-1.2M19 10l1.2-1.2"/></svg>',
+pm:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6L7 7M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"/></svg>',
+night:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 019.5 4 8 8 0 1020 14.5z"/></svg>'};
+var MOUTH=['M7.5 14c1 2.5 8 2.5 9 0','M8.5 14.5c1.5 1.5 5.5 1.5 7 0','M9 15h6','M9 15.6c1.2-.6 4.8-.6 6 0','M8.5 16.2c1.5-1.6 5.5-1.6 7 0'];
+var MSG=['조금씩 채워지고 있어요…','좋은 시작이에요','절반을 넘겼어요','거의 다 왔어요','오늘 한 칸을 가득 채웠어요'];
+function today(){var d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function fresh(){return{date:today(),tasks:{am:[{t:'물 마시기'},{t:'스트레칭'}],pm:[{t:'공부하기'},{t:'산책 10분'}],night:[{t:'독서'},{t:'회고 작성'}]},goal:'',goalDone:false,mood:-1,note:''}}
+function load(){var raw=null;try{raw=localStorage.getItem(KEY)}catch(e){raw=mem}
+ var s;try{s=raw?JSON.parse(raw):null}catch(e){s=null}
+ if(!s)return fresh();
+ if(s.date!==today()){SEC.forEach(function(x){s.tasks[x[0]].forEach(function(k){k.d=false})});s.date=today();s.goal='';s.goalDone=false;s.mood=-1;s.note=''}
+ return s}
+var S=load(), edit=false;
+function save(){var j=JSON.stringify(S);mem=j;try{localStorage.setItem(KEY,j)}catch(e){}}
+function pct(){var n=0,d=0;SEC.forEach(function(x){S.tasks[x[0]].forEach(function(k){n++;if(k.d)d++})});
+ if(S.goal.trim()||S.goalDone){n++;if(S.goalDone)d++}
+ return n?Math.round(d/n*100):0}
+function face(i){return '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9 10h.01M15 10h.01"/><path d="'+MOUTH[i]+'"/></svg>'}
+function progress(){var p=pct();document.getElementById('pv').textContent=p+'%';document.getElementById('pb').style.width=p+'%';
+ document.getElementById('pm').textContent=MSG[p>=100?4:p>=75?3:p>=50?2:p>0?1:0]}
+function render(){
+ var h='<h1><span>✦</span>하루 한 칸</h1><p class="tag">오늘도 부담 없이, 작은 한 칸부터</p>';
+ h+='<div class="box"><div class="hd"><div><b>오늘의 루틴</b><small>오전, 오후, 밤. 세 번의 작은 기회</small></div><button class="ic'+(edit?' on':'')+'" id="ed" aria-label="루틴 편집"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9a2.8 2.8 0 00-4-4L4 16v4zM13.5 6.5l4 4"/></svg></button></div>';
+ SEC.forEach(function(x,si){var k=x[0];
+  if(si)h+='<hr class="sep">';
+  h+='<div class="sec">'+ICON[k]+x[1]+'</div>';
+  S.tasks[k].forEach(function(o,i){
+   if(edit)h+='<div class="row" style="cursor:default"><input type="text" data-n="'+k+':'+i+'" value="'+esc(o.t)+'" maxlength="40"><button class="del" data-del="'+k+':'+i+'" aria-label="삭제">×</button></div>';
+   else h+='<div class="row'+(o.d?' done':'')+'" data-t="'+k+':'+i+'" role="checkbox" aria-checked="'+(!!o.d)+'" tabindex="0"><span class="cb"></span><span class="t">'+esc(o.t)+'</span></div>'});
+  if(edit)h+='<button class="add" data-add="'+k+'">+ 추가</button>'});
+ h+='</div>';
+ h+='<h2><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r=".8"/></svg>오늘 목표</h2>';
+ h+='<div class="goal'+(S.goalDone?' done':'')+'"><button class="cb'+(S.goalDone?' on':'')+'" id="gd" aria-label="목표 완료"></button><input type="text" id="gi" placeholder="오늘 꼭 끝내고 싶은 한 가지" value="'+esc(S.goal)+'" maxlength="60"></div>';
+ h+='<div class="flow">오늘의 흐름<span id="pv"></span></div><div class="bar"><i id="pb"></i></div><div class="msg" id="pm"></div>';
+ h+='<div class="box mood"><b style="padding:0 4px;font-size:16px">오늘의 기분</b><div class="faces">';
+ for(var i=0;i<5;i++)h+='<button class="face'+(S.mood===i?' on':'')+'" data-m="'+i+'" aria-label="기분 '+(i+1)+'">'+face(i)+'</button>';
+ h+='</div><hr class="sep" style="margin:0 4px 14px"><h3>한 줄 회고</h3><div class="note"><input type="text" id="ni" placeholder="오늘을 한 줄로 남겨 보세요" value="'+esc(S.note)+'" maxlength="100"></div></div>';
+ document.getElementById('app').innerHTML=h;progress()}
+function parse(v){var a=v.split(':');return[a[0],+a[1]]}
+var app=document.getElementById('app');
+app.addEventListener('click',function(e){var t=e.target;
+ var el=t.closest('[data-t]');if(el){var p=parse(el.dataset.t),o=S.tasks[p[0]][p[1]];o.d=!o.d;save();render();return}
+ if(t.closest('#ed')){edit=!edit;render();return}
+ if(t.closest('#gd')){S.goalDone=!S.goalDone;save();render();return}
+ var m=t.closest('[data-m]');if(m){var v=+m.dataset.m;S.mood=S.mood===v?-1:v;save();render();return}
+ var d=t.closest('[data-del]');if(d){var q=parse(d.dataset.del);S.tasks[q[0]].splice(q[1],1);save();render();return}
+ var a=t.closest('[data-add]');if(a){S.tasks[a.dataset.add].push({t:''});save();render();var ins=app.querySelectorAll('[data-n^="'+a.dataset.add+':"]');if(ins.length)ins[ins.length-1].focus()}});
+app.addEventListener('keydown',function(e){if((e.key==='Enter'||e.key===' ')&&e.target.dataset&&e.target.dataset.t){e.preventDefault();e.target.click()}});
+app.addEventListener('input',function(e){var t=e.target;
+ if(t.dataset.n){var p=parse(t.dataset.n);S.tasks[p[0]][p[1]].t=t.value}
+ else if(t.id==='gi'){S.goal=t.value;progress()}
+ else if(t.id==='ni'){S.note=t.value}
+ save()});
+render();
+})();
+</script>
+</body>
+</html>
